@@ -2,6 +2,8 @@
 
 A Python tool to crawl websites and check for broken/dead links with detailed reporting in both text and PDF formats.
 
+![Dead Link Checker Screenshot](sc.png)
+
 ## Features
 
 - Scrapes all links from a given webpage
@@ -126,6 +128,21 @@ Output:
 - `reports/example_com_20240115_143022.txt`
 - `reports/example_com_20240115_143022.pdf`
 
+## Quick Command Reference
+
+| Use Case | Command |
+|----------|---------|
+| Basic scan (homepage only) | `python deadlink_checker.py https://example.com` |
+| Fast scan with 20 workers | `python deadlink_checker.py https://example.com -w 20` |
+| Deep scan (2 levels) | `python deadlink_checker.py https://example.com -d 2` |
+| Very deep scan (3 levels) | `python deadlink_checker.py https://example.com -d 3` |
+| Generate PDF report | `python deadlink_checker.py https://example.com --pdf` |
+| PDF only (no text report) | `python deadlink_checker.py https://example.com --pdf --no-txt` |
+| Slow sites (30s timeout) | `python deadlink_checker.py https://example.com -t 30` |
+| Full site audit | `python deadlink_checker.py https://example.com -w 20 -d 2 --pdf` |
+| Quick check (fast timeout) | `python deadlink_checker.py https://example.com -w 30 -t 5` |
+| Custom output file | `python deadlink_checker.py https://example.com -o myreport.txt` |
+
 ## Output
 
 ### Console Output
@@ -244,7 +261,8 @@ WORKING INTERNAL LINKS
 Report saved to: reports/example_com_20240115_143022.txt
 PDF Report saved to: reports/example_com_20240115_143022.pdf
 ```
-
+Directory based commands
+cd /c/Users/user/Desktop/projects/deadlinkchecker && /c/Users/user/AppData/Local/Programs/Python/Python313/python.exe deadlink_checker.py https://demosite.com -d 3 --pdf
 ## License
 
 MIT License

@@ -1,0 +1,27 @@
+/node_modules
+/public/hot
+/public/storage
+/public/uploads
+/storage/*.key
+/storage/debugbar
+/vendor
+.env
+.env.backup
+.env.testing
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+.idea
+/nbproject/private/
+storage/framework/laravel-excel
+.DS_Store
+.phpunit.cache
+.vscode/launch.json
+
+#Adds mix.manifest
+public/mix-manifest.json
+storage/debugbar/*
+.claude
+reports/

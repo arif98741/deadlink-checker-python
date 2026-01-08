@@ -262,7 +262,9 @@ Report saved to: reports/example_com_20240115_143022.txt
 PDF Report saved to: reports/example_com_20240115_143022.pdf
 ```
 Directory based commands
-cd /c/Users/user/Desktop/projects/deadlinkchecker && /c/Users/user/AppData/Local/Programs/Python/Python313/python.exe deadlink_checker.py https://demosite.com -d 3 --pdf
+<br>
+```cd /c/Users/user/Desktop/projects/deadlinkchecker && /c/Users/user/AppData/Local/Programs/Python/Python313/python.exe deadlink_checker.py https://demosite.com -d 3 --pdf```
+
 ## License
 
 MIT License

@@ -1,0 +1,57 @@
+═══════════════════════════════════════════════════════════════
+    INSTALLATION COMPLETED SUCCESSFULLY!
+═══════════════════════════════════════════════════════════════
+
+Thank you for installing Dead Link Checker v2.0!
+
+WHAT'S NEXT?
+────────────────────────────────────────────────────────────────
+
+1. LAUNCH THE APPLICATION
+   • Click "Finish" and check "Launch Dead Link Checker"
+   • Or find it in your Start Menu
+   • Or use the desktop shortcut (if created)
+
+2. START CHECKING LINKS
+   • Enter a website URL
+   • Configure your analysis settings
+   • Click "Start Analysis"
+   • View results in real-time
+
+3. GENERATE REPORTS
+   • Choose report formats (TXT, PDF, CSV)
+   • Reports are saved automatically
+   • Find them in: [Installation Directory]\reports
+
+FEATURES
+────────────────────────────────────────────────────────────────
+
+✓ Check unlimited links on any website
+✓ Real-time progress monitoring
+✓ Detailed analysis reports
+✓ Multiple export formats (TXT, PDF, CSV)
+✓ Professional and easy to use
+✓ No Python or additional software required
+
+SUPPORT & RESOURCES
+────────────────────────────────────────────────────────────────
+
+• Website: https://devtobox.com
+• Documentation: See README.md in installation folder
+• Quick Start: See QUICKSTART.md in installation folder
+• Issues: https://github.com/arif98741/deadlink-checker-python/issues
+
+TIPS
+────────────────────────────────────────────────────────────────
+
+• Start with Crawl Depth 1 for quick checks
+• Use Crawl Depth 2+ for comprehensive analysis
+• Adjust workers based on your internet speed
+• Reports are saved with timestamps for easy tracking
+
+═══════════════════════════════════════════════════════════════
+
+Copyright © 2026 arif98741. All rights reserved.
+Version 2.0
+
+═══════════════════════════════════════════════════════════════

@@ -7,9 +7,12 @@ import sys
 import io
 
 # Fix Windows console encoding for Unicode
+# Check if buffer exists (it won't exist in PyInstaller windowed mode)
 if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    if hasattr(sys.stdout, 'buffer') and sys.stdout.buffer is not None:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    if hasattr(sys.stderr, 'buffer') and sys.stderr.buffer is not None:
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 import requests
 from bs4 import BeautifulSoup
@@ -192,7 +195,7 @@ def normalize_url(url: str) -> str:
     return normalized
 
 
-def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth: int = 1) -> list[LinkResult]:
+def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth: int = 1, progress_callback=None) -> list[LinkResult]:
     """
     Crawl a website recursively and check all links found.
 
@@ -201,6 +204,7 @@ def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth:
         max_workers: Number of concurrent threads for checking links
         timeout: Timeout in seconds for each request
         max_depth: Maximum depth to crawl (1 = homepage only, 2 = homepage + linked pages, etc.)
+        progress_callback: Optional callback function to report progress
 
     Returns:
         List of LinkResult objects
@@ -215,7 +219,10 @@ def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth:
     # Queue of pages to crawl: (url, depth)
     pages_to_crawl = [(url, 0)]
 
-    print(f"\n🕷️  Crawling website with max depth: {max_depth}", flush=True)
+    msg = f"\n🕷️  Crawling website with max depth: {max_depth}"
+    print(msg, flush=True)
+    if progress_callback:
+        progress_callback(msg + "\n")
 
     while pages_to_crawl:
         current_url, current_depth = pages_to_crawl.pop(0)
@@ -226,26 +233,35 @@ def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth:
 
         visited_pages.add(normalized_current)
 
-        print(f"\n{'='*60}", flush=True)
-        print(f"📄 Page {len(visited_pages)}: {current_url}", flush=True)
-        print(f"   Depth: {current_depth}/{max_depth}", flush=True)
-        print(f"{'='*60}", flush=True)
+        msg = f"\n{'='*60}\n📄 Page {len(visited_pages)}: {current_url}\n   Depth: {current_depth}/{max_depth}\n{'='*60}\n"
+        print(msg, flush=True)
+        if progress_callback:
+            progress_callback(msg)
 
         # Get all links from this page
         try:
             links, base_url = get_all_links(current_url, timeout)
         except Exception as e:
-            print(f"❌ Error scraping {current_url}: {e}", flush=True)
+            msg = f"❌ Error scraping {current_url}: {e}"
+            print(msg, flush=True)
+            if progress_callback:
+                progress_callback(msg + "\n")
             continue
 
         # Filter out already checked links
         new_links = [link for link in links if normalize_url(link) not in checked_links]
 
         if not new_links:
-            print(f"   No new links to check on this page", flush=True)
+            msg = "   No new links to check on this page"
+            print(msg, flush=True)
+            if progress_callback:
+                progress_callback(msg + "\n")
             continue
 
-        print(f"📋 Found {len(new_links)} new links to check\n", flush=True)
+        msg = f"📋 Found {len(new_links)} new links to check\n"
+        print(msg, flush=True)
+        if progress_callback:
+            progress_callback(msg)
 
         # Check all new links
         results = []
@@ -265,7 +281,10 @@ def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth:
                 # Progress indicator
                 status_icon = "❌" if result.is_dead else "✅"
                 link_type = "🌐" if result.is_external else "🏠"
-                print(f"[{completed}/{len(new_links)}] {status_icon} {link_type} {result.status_text}: {result.url[:70]}{'...' if len(result.url) > 70 else ''}", flush=True)
+                msg = f"[{completed}/{len(new_links)}] {status_icon} {link_type} {result.status_text}: {result.url[:70]}{'...' if len(result.url) > 70 else ''}\n"
+                print(msg.strip(), flush=True)
+                if progress_callback:
+                    progress_callback(msg)
 
         all_results.extend(results)
 
@@ -283,16 +302,15 @@ def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth:
                         if not path.endswith(skip_extensions):
                             pages_to_crawl.append((result.url, current_depth + 1))
 
-    print(f"\n{'='*60}", flush=True)
-    print(f"🏁 Crawling complete!", flush=True)
-    print(f"   Pages crawled: {len(visited_pages)}", flush=True)
-    print(f"   Total links checked: {len(all_results)}", flush=True)
-    print(f"{'='*60}", flush=True)
+    msg = f"\n{'='*60}\n🏁 Crawling complete!\n   Pages crawled: {len(visited_pages)}\n   Total links checked: {len(all_results)}\n{'='*60}\n"
+    print(msg, flush=True)
+    if progress_callback:
+        progress_callback(msg)
 
     return all_results
 
 
-def check_all_links(url: str, max_workers: int = 10, timeout: int = 10, max_depth: int = 1) -> list[LinkResult]:
+def check_all_links(url: str, max_workers: int = 10, timeout: int = 10, max_depth: int = 1, progress_callback=None) -> list[LinkResult]:
     """
     Scrape a webpage and check all links found.
 
@@ -301,22 +319,32 @@ def check_all_links(url: str, max_workers: int = 10, timeout: int = 10, max_dept
         max_workers: Number of concurrent threads for checking links
         timeout: Timeout in seconds for each request
         max_depth: Maximum depth to crawl
+        progress_callback: Optional callback function to report progress
 
     Returns:
         List of LinkResult objects
     """
     if max_depth > 1:
-        return crawl_website(url, max_workers, timeout, max_depth)
+        return crawl_website(url, max_workers, timeout, max_depth, progress_callback)
 
-    print(f"\n🔍 Scraping links from: {url}", flush=True)
+    msg = f"\n🔍 Scraping links from: {url}"
+    print(msg, flush=True)
+    if progress_callback:
+        progress_callback(msg + "\n")
 
     try:
         links, base_url = get_all_links(url, timeout)
     except Exception as e:
-        print(f"❌ Error scraping {url}: {e}", flush=True)
+        msg = f"❌ Error scraping {url}: {e}"
+        print(msg, flush=True)
+        if progress_callback:
+            progress_callback(msg + "\n")
         return []
 
-    print(f"📋 Found {len(links)} links to check\n", flush=True)
+    msg = f"📋 Found {len(links)} links to check\n"
+    print(msg, flush=True)
+    if progress_callback:
+        progress_callback(msg)
 
     if not links:
         return []
@@ -339,7 +367,17 @@ def check_all_links(url: str, max_workers: int = 10, timeout: int = 10, max_dept
             # Progress indicator
             status_icon = "❌" if result.is_dead else "✅"
             link_type = "🌐" if result.is_external else "🏠"
-            print(f"[{completed}/{len(links)}] {status_icon} {link_type} {result.status_text}: {result.url[:70]}{'...' if len(result.url) > 70 else ''}", flush=True)
+            msg = f"[{completed}/{len(links)}] {status_icon} {link_type} {result.status_text}: {result.url[:70]}{'...' if len(result.url) > 70 else ''}\n"
+            print(msg.strip(), flush=True)
+            if progress_callback:
+                progress_callback(msg)
+                # Update progress bar
+                if hasattr(progress_callback, '__self__'):
+                    try:
+                        progress = completed / len(links)
+                        progress_callback.__self__.progress_queue.put(('progress', progress))
+                    except:
+                        pass
 
     return results
 
@@ -481,6 +519,67 @@ def save_report(report: str, filename: str = "link_report.txt"):
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(report)
     print(f"\n💾 Report saved to: {filename}", flush=True)
+
+
+def generate_csv_report(results: list[LinkResult], filename: str, target_url: str):
+    """Generate a CSV report of all link check results."""
+    import csv
+    import os
+    from datetime import datetime
+    
+    if not results:
+        print("No results to generate CSV report.", flush=True)
+        return
+    
+    # Ensure directory exists
+    os.makedirs(os.path.dirname(filename), exist_ok=True) if os.path.dirname(filename) else None
+    
+    # Calculate statistics
+    dead_links = [r for r in results if r.is_dead]
+    alive_links = [r for r in results if not r.is_dead]
+    pages_crawled = set(r.found_on for r in results)
+    success_rate = len(alive_links) / len(results) * 100 if results else 0
+    
+    with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
+        
+        # Write metadata header
+        writer.writerow(['Dead Link Checker Report'])
+        writer.writerow(['Target URL', target_url])
+        writer.writerow(['Report Generated', datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
+        writer.writerow(['Pages Crawled', len(pages_crawled)])
+        writer.writerow(['Total Links Checked', len(results)])
+        writer.writerow(['Working Links', len(alive_links)])
+        writer.writerow(['Broken Links', len(dead_links)])
+        writer.writerow(['Success Rate', f'{success_rate:.1f}%'])
+        writer.writerow([])  # Empty row separator
+        
+        # Write column headers
+        writer.writerow([
+            'URL',
+            'Status Code',
+            'Status Text',
+            'Response Time (s)',
+            'Link Type',
+            'Found On Page',
+            'Is Dead',
+            'Is External'
+        ])
+        
+        # Write link data
+        for result in results:
+            writer.writerow([
+                result.url,
+                result.status_code if result.status_code else 'N/A',
+                result.status_text,
+                result.response_time if result.response_time else 'N/A',
+                'External' if result.is_external else 'Internal',
+                result.found_on,
+                'Yes' if result.is_dead else 'No',
+                'Yes' if result.is_external else 'No'
+            ])
+    
+    print(f"\n💾 CSV report saved to: {filename}", flush=True)
 
 
 def generate_pdf_report(results: list[LinkResult], filename: str, target_url: str):

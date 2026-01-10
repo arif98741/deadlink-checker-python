@@ -1,27 +1,47 @@
-/node_modules
-/public/hot
-/public/storage
-/public/uploads
-/storage/*.key
-/storage/debugbar
-/vendor
-.env
-.env.backup
-.env.testing
-.phpunit.result.cache
-Homestead.json
-Homestead.yaml
-npm-debug.log
-yarn-error.log
-.idea
-/nbproject/private/
-storage/framework/laravel-excel
-.DS_Store
-.phpunit.cache
-.vscode/launch.json
+# Required Source Folders
+!src/
+!docs/
+!assets/
 
-#Adds mix.manifest
-public/mix-manifest.json
-storage/debugbar/*
-.claude
-reports/
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Build and Distribution folders
+build/
+dist/
+bin/
+build_tools/build/
+build_tools/dist/
+installer_output/
+
+# Reports
+# We ignore the contents but keep the folder via .gitkeep
+reports/*
+!reports/.gitkeep
+
+# PyInstaller
+*.manifest
+*.spec
+*.spec.bak
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log

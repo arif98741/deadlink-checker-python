@@ -1,0 +1,104 @@
+╔══════════════════════════════════════════════════════════════╗
+║          DEAD LINK CHECKER - BUILD QUICK REFERENCE           ║
+║                        Version 2.0                           ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 PREREQUISITES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Python 3.8+        → https://www.python.org/downloads/
+✓ Inno Setup 6       → https://jrsoftware.org/isdl.php
+
+🚀 QUICK BUILD (3 STEPS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Install dependencies:
+   pip install -r requirements.txt
+
+2. Build installer:
+   Double-click: build_installer.bat
+   OR run: .\build_installer.ps1
+
+3. Get your installer:
+   📁 installer_output\DeadLinkChecker_Setup_v2.0.exe
+
+⏱️ BUILD TIME
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PyInstaller:    2-5 minutes
+Inno Setup:     30 seconds
+Total:          ~3-6 minutes
+
+📦 OUTPUT FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+dist\DeadLinkChecker.exe                    (Standalone, ~60 MB)
+installer_output\DeadLinkChecker_Setup_v2.0.exe  (Installer, ~65 MB)
+
+🔧 MANUAL BUILD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Step 1 - Build Executable:
+  pyinstaller --clean deadlink_gui.spec
+
+Step 2 - Build Installer:
+  "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer_script.iss
+
+🎯 DISTRIBUTION OPTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Option 1: Full Installer (Recommended)
+  ✓ Professional installation
+  ✓ Start menu shortcuts
+  ✓ Desktop shortcut option
+  ✓ Uninstaller included
+  📁 installer_output\DeadLinkChecker_Setup_v2.0.exe
+
+Option 2: Portable Executable
+  ✓ No installation needed
+  ✓ Run from anywhere
+  ✓ USB drive compatible
+  📁 dist\DeadLinkChecker.exe
+
+⚙️ CUSTOMIZATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Version:     Edit installer_script.iss → AppVersion
+Icon:        Add icon.ico to root folder
+Publisher:   Edit installer_script.iss → AppPublisher
+Banner:      Add installer_banner.bmp (164x314)
+             Add installer_small.bmp (55x58)
+
+🐛 COMMON ISSUES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"PyInstaller not found"
+  → pip install pyinstaller
+
+"ISCC.exe not found"
+  → Install Inno Setup from jrsoftware.org
+
+"Module not found" error
+  → Add to deadlink_gui.spec → hiddenimports
+
+Antivirus flags executable
+  → False positive (common with PyInstaller)
+  → Add exception or code sign
+
+✅ PRE-DISTRIBUTION CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+□ Test executable on clean Windows machine
+□ Test installer installation
+□ Test uninstaller
+□ Verify all features work
+□ Update version numbers
+□ Update documentation
+□ Test on Windows 10 & 11
+
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BUILD_INSTALLER.md      → Detailed build instructions
+INSTALLATION_GUIDE.md   → Complete installation guide
+README.md               → Project overview
+QUICKSTART.md           → User quick start
+
+🆘 SUPPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GitHub: https://github.com/arif98741/deadlink-checker-python
+Issues: https://github.com/arif98741/deadlink-checker-python/issues
+
+╔══════════════════════════════════════════════════════════════╗
+║              © 2026 arif98741 - MIT License                  ║
+╚══════════════════════════════════════════════════════════════╝

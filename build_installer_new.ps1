@@ -11,6 +11,16 @@ Write-Host ""
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $scriptDir
 
+# Step 0: Auto-increment version
+Write-Host "Step 0: Incrementing version number..." -ForegroundColor Yellow
+$version = & ".\build_tools\version_manager.ps1"
+if (-not $version) {
+    Write-Host "[ERROR] Version increment failed!" -ForegroundColor Red
+    exit 1
+}
+Write-Host "[OK] New Version: $version" -ForegroundColor Green
+Write-Host ""
+
 # Step 1: Check dependencies
 Write-Host "Step 1: Checking dependencies..." -ForegroundColor Yellow
 try {
@@ -84,7 +94,7 @@ if (Test-Path $innoSetupPath) {
     Write-Host "2. Install it (use default installation path)" -ForegroundColor Cyan
     Write-Host "3. Run this script again" -ForegroundColor Cyan
     Write-Host ""
-    $exePath = Join-Path $distDir "DeadLinkChecker_v2.0.exe"
+    $exePath = Join-Path $distDir "DeadLinkChecker_v$version.exe"
     Write-Host "For now, you can use the executable at: $exePath" -ForegroundColor Cyan
     Write-Host ""
     Read-Host "Press Enter to exit"
@@ -104,8 +114,8 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "========================================" -ForegroundColor Green
     Write-Host ""
     
-    $exePath = Join-Path $distDir "DeadLinkChecker_v2.0.exe"
-    $installerPath = Join-Path $installerDir "DeadLinkChecker_Setup_v2.0.exe"
+    $exePath = Join-Path $distDir "DeadLinkChecker_v$version.exe"
+    $installerPath = Join-Path $installerDir "DeadLinkChecker_Setup_v${version}_x64.exe"
     
     Write-Host "Executable: $exePath" -ForegroundColor Cyan
     Write-Host "Installer:  $installerPath" -ForegroundColor Cyan

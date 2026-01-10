@@ -6,6 +6,16 @@ Write-Host "Dead Link Checker - Complete Build" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
+# Step 0: Auto-increment version
+Write-Host "Step 0: Incrementing version number..." -ForegroundColor Yellow
+$version = & ".\version_manager.ps1"
+if (-not $version) {
+    Write-Host "[ERROR] Version increment failed!" -ForegroundColor Red
+    exit 1
+}
+Write-Host "[OK] New Version: $version" -ForegroundColor Green
+Write-Host ""
+
 # Step 1: Check dependencies
 Write-Host "Step 1: Checking dependencies..." -ForegroundColor Yellow
 try {
@@ -98,7 +108,7 @@ if (-not $iscc) {
     Write-Host "2. Install it to one of the above locations" -ForegroundColor Cyan
     Write-Host "3. Or manually run: ISCC.exe installer_script.iss" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "For now, you can use the executable at: dist\DeadLinkChecker_v2.0.exe" -ForegroundColor Cyan
+    Write-Host "For now, you can use the executable at: dist\DeadLinkChecker_v$version.exe" -ForegroundColor Cyan
     Write-Host ""
     Read-Host "Press Enter to exit"
     exit 0
@@ -119,8 +129,8 @@ if ($LASTEXITCODE -eq 0) {
     
     $distDir = "dist"
     $installerDir = Join-Path (Split-Path -Parent $PSScriptRoot) "installer_output"
-    $exePath = Join-Path $distDir "DeadLinkChecker_v2.0.exe"
-    $installerPath = Join-Path $installerDir "DeadLinkChecker_Setup_v2.0.0_x64.exe"
+    $exePath = Join-Path $distDir "DeadLinkChecker_v$version.exe"
+    $installerPath = Join-Path $installerDir "DeadLinkChecker_Setup_v${version}_x64.exe"
     
     Write-Host "Executable: $exePath" -ForegroundColor Cyan
     Write-Host "Installer:  $installerPath" -ForegroundColor Cyan

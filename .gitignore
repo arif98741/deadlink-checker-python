@@ -7,7 +7,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
+# User Config and Database
+config.json
+*.db
+deadlink_history.db
 .Python
 env/
 venv/

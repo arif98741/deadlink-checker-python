@@ -274,6 +274,10 @@ cd build_tools
 &"D:\Inno Setup 6\ISCC.exe" installer_script.iss
 ```
 
+```
+cd build_tools; pwsh -ExecutionPolicy Bypass -File .\version_manager.ps1 && pyinstaller --clean deadlink_gui.spec && & "D:\Inno Setup 6\ISCC.exe" installer_script.iss && cd ..
+```
+
 **Or use the manual build script:**
 ```powershell
 cd build_tools

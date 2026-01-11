@@ -1,4 +1,4 @@
-﻿# -*- mode: python ; coding: utf-8 -*-
+# -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
 
@@ -76,7 +76,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='DeadLinkChecker_v2.0.1',  # Include version in filename
+    name='DeadLinkChecker_v2.0.4',  # Include version in filename
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -92,6 +92,9 @@ exe = EXE(
     icon=None,  # Add icon path here if you have one
     version='version_info.txt',  # Add version information
 )
+
+
+
 
 
 

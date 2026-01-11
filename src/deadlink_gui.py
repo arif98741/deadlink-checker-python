@@ -193,7 +193,7 @@ class DeadLinkCheckerGUI(ctk.CTk):
         website_label.bind("<Button-1>", lambda e: webbrowser.open("https://devtobox.com"))
         
         # ==================== LEFT PANEL - CONTROLS ====================
-        left_panel = ctk.CTkFrame(self, corner_radius=10)
+        left_panel = ctk.CTkScrollableFrame(self, corner_radius=10)
         left_panel.grid(row=1, column=0, sticky="nsew", padx=(20, 10), pady=20)
         
         # Configure grid
@@ -811,7 +811,7 @@ class SettingsWindow(ctk.CTkToplevel):
         
         self.title("Application Settings")
         self.geometry("550x750")
-        self.resizable(False, False)
+        self.resizable(True, True)
         self.grab_set()  # Modal
         
         # Center window
@@ -820,8 +820,8 @@ class SettingsWindow(ctk.CTkToplevel):
         # UI
         ctk.CTkLabel(self, text="⚙️ GLOBAL SETTINGS", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=20)
         
-        container = ctk.CTkFrame(self)
-        container.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        container = ctk.CTkScrollableFrame(self)
+        container.pack(fill="both", expand=True, padx=20, pady=(0, 10))
         
         # Report Directory
         ctk.CTkLabel(container, text="Default Report Directory:", font=ctk.CTkFont(weight="bold")).pack(pady=(10, 0), padx=10, anchor="w")

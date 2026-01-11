@@ -38,17 +38,17 @@ if (Test-Path $versionInfoFile) {
 # 4. Update build_tools/installer_script.iss
 if (Test-Path $installerFile) {
     $issContent = Get-Content $installerFile -Raw
-    $issContent = $issContent -replace 'AppVersion=\d+\.\d+(\.\d+)?', "AppVersion=$newVersion"
-    $issContent = $issContent -replace 'OutputBaseFilename=DeadLinkChecker_Setup_v\d+\.\d+\.\d+_x64', "OutputBaseFilename=DeadLinkChecker_Setup_v${newVersion}_x64"
-    $issContent = $issContent -replace 'DeadLinkChecker_v\d+\.\d+', "DeadLinkChecker_v$newVersion"
-    $issContent = $issContent -replace 'Dead Link Checker v\d+\.\d+', "Dead Link Checker v$newVersion"
+    $issContent = $issContent -replace 'AppVersion=\d+(\.\d+)*', "AppVersion=$newVersion"
+    $issContent = $issContent -replace 'OutputBaseFilename=DeadLinkChecker_Setup_v\d+(\.\d+)*_x64', "OutputBaseFilename=DeadLinkChecker_Setup_v${newVersion}_x64"
+    $issContent = $issContent -replace 'DeadLinkChecker_v\d+(\.\d+)*', "DeadLinkChecker_v$newVersion"
+    $issContent = $issContent -replace 'Dead Link Checker v\d+(\.\d+)*', "Dead Link Checker v$newVersion"
     $issContent | Set-Content $installerFile -Encoding UTF8
 }
 
 # 5. Update build_tools/deadlink_gui.spec
 if (Test-Path $specFile) {
     $specContent = Get-Content $specFile -Raw
-    $specContent = $specContent -replace "name='DeadLinkChecker_v\d+\.\d+'", "name='DeadLinkChecker_v$newVersion'"
+    $specContent = $specContent -replace "name='DeadLinkChecker_v\d+(\.\d+)*'", "name='DeadLinkChecker_v$newVersion'"
     $specContent | Set-Content $specFile -Encoding UTF8
 }
 

@@ -4,3 +4,7 @@ customtkinter>=5.2.0
 pillow>=10.0.0
 reportlab>=4.0.0
 pyinstaller>=6.0.0
+pystray>=0.19.5
+plyer>=2.1.0
+CTkTable>=1.1
+lxml>=4.9.0

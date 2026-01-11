@@ -1,4 +1,4 @@
-# -*- mode: python ; coding: utf-8 -*-
+﻿# -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
 
@@ -13,6 +13,13 @@ a = Analysis(
         'tkinter',
         'tkinter.filedialog',
         'tkinter.messagebox',
+        'CTkTable',
+        
+        # Tray & Notifications
+        'pystray',
+        'pystray._win32',
+        'plyer',
+        'plyer.platforms.win.notification',
         
         # Image Processing
         'PIL',
@@ -38,6 +45,7 @@ a = Analysis(
         'requests',
         'urllib',
         'urllib.parse',
+        'lxml',
         
         # Standard Library (explicitly include)
         'csv',
@@ -76,25 +84,20 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='DeadLinkChecker_v2.0.4',  # Include version in filename
+    name='DeadLinkChecker_v2.1.1',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,  # Hide console window (buffer issue is now fixed)
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,  # Add icon path here if you have one
-    version='version_info.txt',  # Add version information
+    icon=None,
+    version='version_info.txt',
 )
-
-
-
-
-
 

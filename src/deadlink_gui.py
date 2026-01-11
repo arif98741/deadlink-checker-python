@@ -12,6 +12,11 @@ from datetime import datetime
 import os
 from pathlib import Path
 import webbrowser
+from PIL import Image
+import pystray
+from pystray import MenuItem as item
+from plyer import notification
+from CTkTable import *
 
 # Import the core functionality from deadlink_checker
 # Import the core functionality from the modular deadlink package
@@ -90,16 +95,26 @@ class DeadLinkCheckerGUI(ctk.CTk):
         
         # Initialize variables
         self.is_checking = False
+        self.is_paused = False
         self.results = []
         self.current_url = ""
         self.progress_queue = queue.Queue()
+        self.pause_event = threading.Event()
+        self.stop_event = threading.Event()
         self.db = DatabaseManager()
+        
+        # System Tray Icon
+        self.tray_icon = None
+        self.setup_tray()
         
         # Create UI
         self.create_widgets()
         
         # Start progress monitor
         self.monitor_progress()
+        
+        # Protocol
+        self.protocol("WM_DELETE_WINDOW", self.minimize_to_tray)
         
     def create_widgets(self):
         """Create all UI widgets"""
@@ -416,6 +431,18 @@ class DeadLinkCheckerGUI(ctk.CTk):
         )
         self.stop_button.pack(fill="x", pady=5)
         
+        self.pause_button = ctk.CTkButton(
+            button_frame,
+            text="⏸ Pause Analysis",
+            command=self.toggle_pause,
+            height=40,
+            font=ctk.CTkFont(size=14),
+            fg_color=("#f39c12", "#d35400"),
+            hover_color=("#e67e22", "#a04000"),
+            state="disabled"
+        )
+        self.pause_button.pack(fill="x", pady=5)
+        
         # ==================== RIGHT PANEL - RESULTS ====================
         right_panel = ctk.CTkFrame(self, corner_radius=10)
         right_panel.grid(row=1, column=1, sticky="nsew", padx=(10, 20), pady=20)
@@ -430,18 +457,42 @@ class DeadLinkCheckerGUI(ctk.CTk):
         )
         results_header.grid(row=0, column=0, pady=(20, 10), padx=20, sticky="w")
         
-        # Progress/Status Display
-        self.status_text = ctk.CTkTextbox(
-            right_panel,
-            font=ctk.CTkFont(family="Consolas", size=12),
-            wrap="word"
-        )
-        self.status_text.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 10))
-        
         # Progress Bar
         self.progress_bar = ctk.CTkProgressBar(right_panel)
         self.progress_bar.grid(row=2, column=0, sticky="ew", padx=20, pady=10)
         self.progress_bar.set(0)
+
+        # Interactive Results Grid (replacing text area or adding alongside)
+        # We will use a TabView to switch between Log and Table
+        self.tab_view = ctk.CTkTabview(right_panel)
+        self.tab_view.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 10))
+        self.tab_view.add("Log View")
+        self.tab_view.add("Grid View")
+        self.tab_view.set("Grid View") # Set Grid View as default
+        
+        self.status_text = ctk.CTkTextbox(
+            self.tab_view.tab("Log View"),
+            font=ctk.CTkFont(family="Consolas", size=12),
+            wrap="word"
+        )
+        self.status_text.pack(fill="both", expand=True)
+        
+        # Grid View
+        self.grid_frame = ctk.CTkFrame(self.tab_view.tab("Grid View"))
+        self.grid_frame.pack(fill="both", expand=True)
+        
+        # Search/Filter in Grid
+        filter_frame = ctk.CTkFrame(self.grid_frame, fg_color="transparent")
+        filter_frame.pack(fill="x", pady=5, padx=5)
+        
+        self.grid_search = ctk.CTkEntry(filter_frame, placeholder_text="Filter results...", height=30)
+        self.grid_search.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        self.grid_search.bind("<KeyRelease>", self.filter_grid)
+        
+        self.grid_table_container = ctk.CTkScrollableFrame(self.grid_frame)
+        self.grid_table_container.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        self.table = None # Will be initialized on first result
         
         # Statistics Frame
         stats_frame = ctk.CTkFrame(right_panel)
@@ -585,12 +636,22 @@ class DeadLinkCheckerGUI(ctk.CTk):
         
         # Update UI state
         self.is_checking = True
+        self.is_paused = False
         self.current_url = url
+        self.pause_event.clear()
+        self.stop_event.clear()
+        
         self.start_button.configure(state="disabled")
         self.stop_button.configure(state="normal")
+        self.pause_button.configure(state="normal", text="⏸ Pause Analysis")
         self.url_entry.configure(state="disabled")
         
         # Clear previous results
+        self.results = []
+        if self.table:
+            self.table.destroy()
+            self.table = None
+        
         self.status_text.configure(state="normal")
         self.status_text.delete("1.0", "end")
         self.status_text.configure(state="disabled")
@@ -662,12 +723,17 @@ class DeadLinkCheckerGUI(ctk.CTk):
                 progress_callback=self.log_message,
                 auth=auth,
                 headers=headers,
-                exclude_patterns=exclude_patterns
+                exclude_patterns=exclude_patterns,
+                pause_event=self.pause_event,
+                stop_event=self.stop_event
             )
             
-            if not self.is_checking:
+            if self.stop_event.is_set():
                 self.log_message("\n⚠️  Analysis stopped by user.\n")
+                self.show_notification("Analysis Stopped", f"The analysis for {url} was stopped.")
                 return
+            
+            self.show_notification("Analysis Complete", f"Found {len(results)} links on {url}.")
             
             self.results = results
             
@@ -717,19 +783,110 @@ class DeadLinkCheckerGUI(ctk.CTk):
     def stop_check(self):
         """Stop the checking process"""
         self.is_checking = False
+        self.stop_event.set()
+        self.pause_event.clear()
         self.log_message("\n⏹ Stopping analysis...\n")
         self.reset_ui()
     
+    def toggle_pause(self):
+        """Toggle pause/resume"""
+        if not self.is_checking:
+            return
+            
+        if not self.is_paused:
+            self.is_paused = True
+            self.pause_event.set()
+            self.pause_button.configure(text="▶ Resume Analysis", fg_color=("#27ae60", "#1e8449"))
+            self.log_message("\n⏸ Analysis paused.\n")
+        else:
+            self.is_paused = False
+            self.pause_event.clear()
+            self.pause_button.configure(text="⏸ Pause Analysis", fg_color=("#f39c12", "#d35400"))
+            self.log_message("\n▶ Analysis resumed.\n")
+
+    def setup_tray(self):
+        """Setup system tray icon"""
+        try:
+            image = Image.open("assets/icon.png") if os.path.exists("assets/icon.png") else Image.new('RGB', (64, 64), color=(0, 120, 215))
+            menu = (
+                item('Restore', self.show_window),
+                item('Exit', self.exit_app)
+            )
+            self.tray_icon = pystray.Icon("deadlinkchecker", image, "Dead Link Checker", menu)
+            threading.Thread(target=self.tray_icon.run, daemon=True).start()
+        except:
+            pass
+
+    def show_window(self):
+        """Show the main window from tray"""
+        self.deiconify()
+        self.lift()
+        self.focus_force()
+
+    def exit_app(self):
+        """Exit the application completely"""
+        if self.tray_icon:
+            self.tray_icon.stop()
+        self.quit()
+
+    def show_notification(self, title, message):
+        """Show system notification"""
+        try:
+            notification.notify(
+                title=title,
+                message=message,
+                app_name="Dead Link Checker",
+                timeout=10
+            )
+        except:
+            pass
+
+    def update_grid(self, result: LinkResult):
+        """Update the interactive grid with a new result"""
+        self.progress_queue.put(('grid', result))
+
+    def filter_grid(self, event=None):
+        """Filter the grid results based on search text"""
+        search_query = self.grid_search.get().lower()
+        if not self.table:
+            return
+            
+        # Implementation of filtering for CTkTable
+        # Since CTkTable doesn't have native filtering, we'll have to redraw or manage data
+        # To keep it simple and performant, we'll filter from self.results
+        filtered_data = [["URL", "Status", "Type", "Time", "Location"]] # Header
+        for r in self.results:
+            row = [
+                r.url, 
+                f"{r.status_code} {r.status_text}", 
+                r.link_type, 
+                f"{r.response_time}s",
+                "External" if r.is_external else "Internal"
+            ]
+            if any(search_query in str(cell).lower() for cell in row):
+                filtered_data.append(row)
+        
+        self.table.update_values(filtered_data)
+
     def reset_ui(self):
         """Reset UI to initial state"""
         self.start_button.configure(state="normal")
         self.stop_button.configure(state="disabled")
+        self.pause_button.configure(state="disabled", text="⏸ Pause Analysis")
         self.url_entry.configure(state="normal")
         self.progress_bar.set(1)
+
+    def minimize_to_tray(self):
+        """Minimize window to system tray"""
+        self.withdraw()
+        self.show_notification("Dead Link Checker", "App minimized to system tray.")
     
     def log_message(self, message):
-        """Add message to status text"""
-        self.progress_queue.put(('log', message))
+        """Add message or LinkResult to status text/grid"""
+        if isinstance(message, LinkResult):
+            self.progress_queue.put(('grid', message))
+        else:
+            self.progress_queue.put(('log', message))
     
     def update_statistics(self, results):
         """Update statistics display"""
@@ -768,12 +925,47 @@ class DeadLinkCheckerGUI(ctk.CTk):
                 
                 elif msg_type == 'progress':
                     self.progress_bar.set(data)
+
+                elif msg_type == 'grid':
+                    self.results.append(data)
+                    self.add_result_to_grid(data)
                     
         except queue.Empty:
             pass
         
         # Schedule next check
         self.after(100, self.monitor_progress)
+
+    def add_result_to_grid(self, result: LinkResult):
+        """Add a single result row to the table grid"""
+        row_data = [
+            result.url, 
+            f"{result.status_code if result.status_code else 'Err'} {result.status_text}", 
+            result.link_type, 
+            f"{result.response_time}s",
+            "External" if result.is_external else "Internal"
+        ]
+        
+        if not self.table:
+            # Initialize table with headers
+            headers = [["URL", "Status", "Type", "Time", "Location"]]
+            self.table = CTkTable(
+                master=self.grid_table_container, 
+                values=headers + [row_data],
+                colors=("#2c3e50", "#34495e"),
+                header_color="#1a5276",
+                hover_color="#34495e",
+                anchor="w" # Left align data
+            )
+            self.table.pack(fill="both", expand=True)
+        else:
+            self.table.add_row(values=row_data)
+        
+        # Scroll to bottom
+        try:
+            self.grid_table_container._parent_canvas.yview_moveto(1.0)
+        except:
+            pass
     
     def open_reports_folder(self):
         """Open the reports folder"""

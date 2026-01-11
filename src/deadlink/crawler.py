@@ -7,6 +7,8 @@ from .models import LinkResult
 from .scanner import get_all_links, check_link
 from .utils import normalize_url, is_external_url
 
+import time
+
 def should_exclude(url: str, patterns: list[str]) -> bool:
     """Check if a URL matches any of the exclusion patterns."""
     if not patterns:
@@ -20,7 +22,7 @@ def should_exclude(url: str, patterns: list[str]) -> bool:
                 return True
     return False
 
-def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth: int = 1, progress_callback=None, auth: tuple = None, headers: dict = None, exclude_patterns: list[str] = None) -> list[LinkResult]:
+def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth: int = 1, progress_callback=None, auth: tuple = None, headers: dict = None, exclude_patterns: list[str] = None, pause_event=None, stop_event=None) -> list[LinkResult]:
     """Crawl a website recursively and check all links found."""
     visited_pages = set()
     checked_links = set()
@@ -32,6 +34,17 @@ def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth:
     if progress_callback: progress_callback(msg + "\n")
 
     while pages_to_crawl:
+        # Check stop event
+        if stop_event and stop_event.is_set():
+            break
+
+        # Check pause event
+        if pause_event:
+            while pause_event.is_set() and not (stop_event and stop_event.is_set()):
+                time.sleep(0.5)
+            if stop_event and stop_event.is_set():
+                break
+
         current_url, current_depth = pages_to_crawl.pop(0)
         normalized_current = normalize_url(current_url)
 
@@ -82,6 +95,19 @@ def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth:
 
             completed = 0
             for future in concurrent.futures.as_completed(future_to_url):
+                # Check stop event
+                if stop_event and stop_event.is_set():
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    break
+
+                # Check pause event
+                if pause_event:
+                    while pause_event.is_set() and not (stop_event and stop_event.is_set()):
+                        time.sleep(0.5)
+                    if stop_event and stop_event.is_set():
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        break
+
                 completed += 1
                 result = future.result()
                 
@@ -97,7 +123,9 @@ def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth:
                 loc_icon = "🌐" if result.is_external else "🏠"
                 
                 msg = f"[{completed}/{len(new_links)}] {status_icon} {link_icon} {loc_icon} {result.status_text}: {result.url[:70]}{'...' if len(result.url) > 70 else ''}\n"
-                if progress_callback: progress_callback(msg)
+                if progress_callback: 
+                    progress_callback(msg)
+                    progress_callback(result)
 
         all_results.extend(results)
 
@@ -123,7 +151,11 @@ def get_sitemap_urls(sitemap_url: str, timeout: int = 10, auth: tuple = None, he
         
     response = requests.get(sitemap_url, headers=default_headers, timeout=timeout, auth=auth)
     response.raise_for_status()
-    soup = BeautifulSoup(response.text, 'xml')
+    try:
+        soup = BeautifulSoup(response.text, 'xml')
+    except:
+        # Fallback to html.parser if lxml/xml parser is not available
+        soup = BeautifulSoup(response.text, 'html.parser')
     urls = []
     for loc in soup.find_all('loc'):
         url = loc.text.strip()
@@ -137,7 +169,7 @@ def get_sitemap_urls(sitemap_url: str, timeout: int = 10, auth: tuple = None, he
         return list(set(all_urls))
     return list(set(urls))
 
-def crawl_sitemap(sitemap_url: str, max_workers: int = 10, timeout: int = 10, progress_callback=None, auth: tuple = None, headers: dict = None, exclude_patterns: list[str] = None) -> list[LinkResult]:
+def crawl_sitemap(sitemap_url: str, max_workers: int = 10, timeout: int = 10, progress_callback=None, auth: tuple = None, headers: dict = None, exclude_patterns: list[str] = None, pause_event=None, stop_event=None) -> list[LinkResult]:
     """Crawl all pages listed in a sitemap and check their assets."""
     msg = f"\n🗺️  Parsing sitemap: {sitemap_url}"
     if progress_callback: progress_callback(msg + "\n")
@@ -152,6 +184,17 @@ def crawl_sitemap(sitemap_url: str, max_workers: int = 10, timeout: int = 10, pr
     all_results = []
     checked_assets = set()
     for i, page_url in enumerate(pages_to_check, 1):
+        # Check stop event
+        if stop_event and stop_event.is_set():
+            break
+
+        # Check pause event
+        if pause_event:
+            while pause_event.is_set() and not (stop_event and stop_event.is_set()):
+                time.sleep(0.5)
+            if stop_event and stop_event.is_set():
+                break
+
         if should_exclude(page_url, exclude_patterns):
             msg = f"⏭️  Excluding sitemap page: {page_url}\n"
             if progress_callback: progress_callback(msg)
@@ -178,6 +221,19 @@ def crawl_sitemap(sitemap_url: str, max_workers: int = 10, timeout: int = 10, pr
                 }
                 completed = 0
                 for future in concurrent.futures.as_completed(future_to_url):
+                    # Check stop event
+                    if stop_event and stop_event.is_set():
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        break
+
+                    # Check pause event
+                    if pause_event:
+                        while pause_event.is_set() and not (stop_event and stop_event.is_set()):
+                            time.sleep(0.5)
+                        if stop_event and stop_event.is_set():
+                            executor.shutdown(wait=False, cancel_futures=True)
+                            break
+
                     completed += 1
                     result = future.result()
                     # Determine is_external
@@ -189,18 +245,20 @@ def crawl_sitemap(sitemap_url: str, max_workers: int = 10, timeout: int = 10, pr
                     link_icon = type_icons.get(result.link_type, "🔗")
                     loc_icon = "🌐" if result.is_external else "🏠"
                     msg = f"[{completed}/{len(new_assets)}] {status_icon} {link_icon} {loc_icon} {result.status_text}: {result.url[:70]}{'...' if len(result.url) > 70 else ''}\n"
-                    if progress_callback: progress_callback(msg)
+                    if progress_callback: 
+                        progress_callback(msg)
+                        progress_callback(result)
         except Exception as e:
             msg = f"❌ Error processing {page_url}: {e}\n"
             if progress_callback: progress_callback(msg)
     return all_results
 
-def check_all_links(url: str, max_workers: int = 10, timeout: int = 10, max_depth: int = 1, progress_callback=None, auth: tuple = None, headers: dict = None, exclude_patterns: list[str] = None) -> list[LinkResult]:
+def check_all_links(url: str, max_workers: int = 10, timeout: int = 10, max_depth: int = 1, progress_callback=None, auth: tuple = None, headers: dict = None, exclude_patterns: list[str] = None, pause_event=None, stop_event=None) -> list[LinkResult]:
     """Dispatcher for crawling/checking links."""
     if url.endswith('sitemap.xml') or 'sitemap' in url.lower():
-        return crawl_sitemap(url, max_workers, timeout, progress_callback, auth=auth, headers=headers, exclude_patterns=exclude_patterns)
+        return crawl_sitemap(url, max_workers, timeout, progress_callback, auth=auth, headers=headers, exclude_patterns=exclude_patterns, pause_event=pause_event, stop_event=stop_event)
     if max_depth > 1:
-        return crawl_website(url, max_workers, timeout, max_depth, progress_callback, auth=auth, headers=headers, exclude_patterns=exclude_patterns)
+        return crawl_website(url, max_workers, timeout, max_depth, progress_callback, auth=auth, headers=headers, exclude_patterns=exclude_patterns, pause_event=pause_event, stop_event=stop_event)
     
     msg = f"\n🔍 Scraping links and assets from: {url}"
     if progress_callback: progress_callback(msg + "\n")
@@ -234,6 +292,19 @@ def check_all_links(url: str, max_workers: int = 10, timeout: int = 10, max_dept
         }
         completed = 0
         for future in concurrent.futures.as_completed(future_to_url):
+            # Check stop event
+            if stop_event and stop_event.is_set():
+                executor.shutdown(wait=False, cancel_futures=True)
+                break
+
+            # Check pause event
+            if pause_event:
+                while pause_event.is_set() and not (stop_event and stop_event.is_set()):
+                    time.sleep(0.5)
+                if stop_event and stop_event.is_set():
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    break
+
             completed += 1
             result = future.result()
             result.is_external = is_external_url(result.url, url)
@@ -243,7 +314,9 @@ def check_all_links(url: str, max_workers: int = 10, timeout: int = 10, max_dept
             link_icon = type_icons.get(result.link_type, "🔗")
             loc_icon = "🌐" if result.is_external else "🏠"
             msg = f"[{completed}/{len(filtered_links)}] {status_icon} {link_icon} {loc_icon} {result.status_text}: {result.url[:70]}{'...' if len(result.url) > 70 else ''}\n"
-            if progress_callback: progress_callback(msg)
+            if progress_callback: 
+                progress_callback(msg)
+                progress_callback(result)
             if hasattr(progress_callback, '__self__'):
                 try:
                     progress_callback.__self__.progress_queue.put(('progress', completed / len(filtered_links)))

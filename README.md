@@ -127,16 +127,19 @@ A powerful desktop application for analyzing and reporting broken links on websi
 
 If you want to create a standalone binary and install it to your system (menu shortcut, icons):
 
-1. **Build the binary**:
+1. **Build the bundle**:
    ```bash
    chmod +x build_tools/build_linux.sh
    ./build_tools/build_linux.sh
    ```
-2. **Run the installer**:
+   This will create a `DeadLinkChecker_v2.1.2_linux_x64.tar.gz` in the `installer_output/` folder.
+2. **Install the bundle**:
    ```bash
-   cd dist_linux
-   chmod +x ../build_tools/install_linux.sh
-   ../build_tools/install_linux.sh
+   # Extract the bundle
+   cd installer_output
+   tar -xzf DeadLinkChecker_v2.1.2_linux_x64.tar.gz -C .
+   # Run the installer script
+   ./install.sh
    ```
    This will add the app to your application menu and create a terminal command `deadlinkchecker`.
 

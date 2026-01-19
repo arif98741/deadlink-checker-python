@@ -22,7 +22,7 @@ def should_exclude(url: str, patterns: list[str]) -> bool:
                 return True
     return False
 
-def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth: int = 1, progress_callback=None, auth: tuple = None, headers: dict = None, exclude_patterns: list[str] = None, pause_event=None, stop_event=None) -> list[LinkResult]:
+def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth: int = 1, progress_callback=None, auth: tuple = None, headers: dict = None, exclude_patterns: list[str] = None, pause_event=None, stop_event=None, check_external: bool = True) -> list[LinkResult]:
     """Crawl a website recursively and check all links found."""
     visited_pages = set()
     checked_links = set()
@@ -76,6 +76,23 @@ def crawl_website(url: str, max_workers: int = 10, timeout: int = 10, max_depth:
                     # We still mark it as "checked" so we don't keep excluding it
                     checked_links.add(norm_link)
                     continue
+                if not check_external and is_external_url(link, url):
+                    # Record it as checked but skip actual HTTP validation
+                    checked_links.add(norm_link)
+                    result = LinkResult(
+                        url=link, 
+                        status_code=200, 
+                        status_text="Skipped (External)", 
+                        response_time=0, 
+                        found_on=current_url, 
+                        is_dead=False, 
+                        is_external=True, 
+                        link_type=link_type
+                    )
+                    all_results.append(result)
+                    if progress_callback: progress_callback(result)
+                    continue
+                    
                 new_links.append((link, link_type))
 
         if not new_links:
@@ -169,7 +186,7 @@ def get_sitemap_urls(sitemap_url: str, timeout: int = 10, auth: tuple = None, he
         return list(set(all_urls))
     return list(set(urls))
 
-def crawl_sitemap(sitemap_url: str, max_workers: int = 10, timeout: int = 10, progress_callback=None, auth: tuple = None, headers: dict = None, exclude_patterns: list[str] = None, pause_event=None, stop_event=None) -> list[LinkResult]:
+def crawl_sitemap(sitemap_url: str, max_workers: int = 10, timeout: int = 10, progress_callback=None, auth: tuple = None, headers: dict = None, exclude_patterns: list[str] = None, pause_event=None, stop_event=None, check_external: bool = True) -> list[LinkResult]:
     """Crawl all pages listed in a sitemap and check their assets."""
     msg = f"\n🗺️  Parsing sitemap: {sitemap_url}"
     if progress_callback: progress_callback(msg + "\n")
@@ -212,6 +229,21 @@ def crawl_sitemap(sitemap_url: str, max_workers: int = 10, timeout: int = 10, pr
                     if should_exclude(asset_url, exclude_patterns):
                         checked_assets.add(norm_asset)
                         continue
+                    if not check_external and is_external_url(asset_url, page_url):
+                        checked_assets.add(norm_asset)
+                        result = LinkResult(
+                            url=asset_url, 
+                            status_code=200, 
+                            status_text="Skipped (External)", 
+                            response_time=0, 
+                            found_on=page_url, 
+                            is_dead=False, 
+                            is_external=True, 
+                            link_type=asset_type
+                        )
+                        all_results.append(result)
+                        if progress_callback: progress_callback(result)
+                        continue
                     new_assets.append((asset_url, asset_type))
             if not new_assets: continue
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -253,12 +285,12 @@ def crawl_sitemap(sitemap_url: str, max_workers: int = 10, timeout: int = 10, pr
             if progress_callback: progress_callback(msg)
     return all_results
 
-def check_all_links(url: str, max_workers: int = 10, timeout: int = 10, max_depth: int = 1, progress_callback=None, auth: tuple = None, headers: dict = None, exclude_patterns: list[str] = None, pause_event=None, stop_event=None) -> list[LinkResult]:
+def check_all_links(url: str, max_workers: int = 10, timeout: int = 10, max_depth: int = 1, progress_callback=None, auth: tuple = None, headers: dict = None, exclude_patterns: list[str] = None, pause_event=None, stop_event=None, check_external: bool = True) -> list[LinkResult]:
     """Dispatcher for crawling/checking links."""
     if url.endswith('sitemap.xml') or 'sitemap' in url.lower():
-        return crawl_sitemap(url, max_workers, timeout, progress_callback, auth=auth, headers=headers, exclude_patterns=exclude_patterns, pause_event=pause_event, stop_event=stop_event)
+        return crawl_sitemap(url, max_workers, timeout, progress_callback, auth=auth, headers=headers, exclude_patterns=exclude_patterns, pause_event=pause_event, stop_event=stop_event, check_external=check_external)
     if max_depth > 1:
-        return crawl_website(url, max_workers, timeout, max_depth, progress_callback, auth=auth, headers=headers, exclude_patterns=exclude_patterns, pause_event=pause_event, stop_event=stop_event)
+        return crawl_website(url, max_workers, timeout, max_depth, progress_callback, auth=auth, headers=headers, exclude_patterns=exclude_patterns, pause_event=pause_event, stop_event=stop_event, check_external=check_external)
     
     msg = f"\n🔍 Scraping links and assets from: {url}"
     if progress_callback: progress_callback(msg + "\n")
@@ -277,6 +309,20 @@ def check_all_links(url: str, max_workers: int = 10, timeout: int = 10, max_dept
     filtered_links = []
     for link, ltype in links_with_types:
         if not should_exclude(link, exclude_patterns):
+            if not check_external and is_external_url(link, url):
+                result = LinkResult(
+                    url=link, 
+                    status_code=200, 
+                    status_text="Skipped (External)", 
+                    response_time=0, 
+                    found_on=url, 
+                    is_dead=False, 
+                    is_external=True, 
+                    link_type=ltype
+                )
+                results.append(result)
+                if progress_callback: progress_callback(result)
+                continue
             filtered_links.append((link, ltype))
         else:
              msg = f"⏭️  Excluding: {link}\n"

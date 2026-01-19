@@ -84,7 +84,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='DeadLinkChecker_v2.1.1',
+    name='DeadLinkChecker_v2.1.2',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -100,4 +100,6 @@ exe = EXE(
     icon=None,
     version='version_info.txt',
 )
+
+
 

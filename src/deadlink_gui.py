@@ -21,6 +21,7 @@ from CTkTable import *
 # Import the core functionality from deadlink_checker
 # Import the core functionality from the modular deadlink package
 from deadlink import (
+    setup_windows_encoding,
     check_all_links, 
     generate_report, 
     save_report, 
@@ -53,7 +54,8 @@ DEFAULT_CONFIG = {
     "username": "",
     "password": "",
     "cookies": "",
-    "exclude_rules": ""
+    "exclude_rules": "",
+    "check_external": True
 }
 
 def load_config():
@@ -102,16 +104,15 @@ class DeadLinkCheckerGUI(ctk.CTk):
         self.pause_event = threading.Event()
         self.stop_event = threading.Event()
         self.db = DatabaseManager()
-        
-        # System Tray Icon
         self.tray_icon = None
-        self.setup_tray()
         
         # Create UI
         self.create_widgets()
         
-        # Start progress monitor
-        self.monitor_progress()
+        # Schedule deferred initialization to keep startup snappy
+        # Use a small delay to let the main window render first
+        self.after(100, self.setup_tray)
+        self.after(200, self.monitor_progress)
         
         # Protocol
         self.protocol("WM_DELETE_WINDOW", self.minimize_to_tray)
@@ -303,6 +304,18 @@ class DeadLinkCheckerGUI(ctk.CTk):
             text_color="gray"
         )
         depth_info.pack(pady=(0, 10), padx=20, anchor="w")
+
+        # Check External Links
+        self.check_external = ctk.CTkCheckBox(
+            left_panel,
+            text="Check External Links",
+            font=ctk.CTkFont(size=13)
+        )
+        self.check_external.pack(pady=(5, 10), padx=20, anchor="w")
+        if self.config.get("check_external", True):
+            self.check_external.select()
+        else:
+            self.check_external.deselect()
         
         # Workers
         workers_frame = ctk.CTkFrame(left_panel, fg_color="transparent")
@@ -410,38 +423,46 @@ class DeadLinkCheckerGUI(ctk.CTk):
         
         self.start_button = ctk.CTkButton(
             button_frame,
-            text="▶ Start Analysis",
+            text="▶ Start",
             command=self.start_check,
             height=50,
             font=ctk.CTkFont(size=16, weight="bold"),
             fg_color=("#27ae60", "#1e8449"),
-            hover_color=("#229954", "#196f3d")
+            hover_color=("#2ecc71", "#27ae60"),
+            corner_radius=8
         )
         self.start_button.pack(fill="x", pady=5)
         
-        self.stop_button = ctk.CTkButton(
-            button_frame,
-            text="⏹ Stop Analysis",
-            command=self.stop_check,
-            height=40,
-            font=ctk.CTkFont(size=14),
-            fg_color=("#c0392b", "#922b21"),
-            hover_color=("#a93226", "#7b241c"),
-            state="disabled"
-        )
-        self.stop_button.pack(fill="x", pady=5)
-        
+        # Stop and Pause in a horizontal frame for a more compact/premium redesign
+        control_frame = ctk.CTkFrame(button_frame, fg_color="transparent")
+        control_frame.pack(fill="x", pady=0)
+        control_frame.grid_columnconfigure((0, 1), weight=1)
+
         self.pause_button = ctk.CTkButton(
-            button_frame,
-            text="⏸ Pause Analysis",
+            control_frame,
+            text="⏸ Pause",
             command=self.toggle_pause,
             height=40,
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=14, weight="bold"),
             fg_color=("#f39c12", "#d35400"),
-            hover_color=("#e67e22", "#a04000"),
-            state="disabled"
+            hover_color=("#f1c40f", "#f39c12"),
+            state="disabled",
+            corner_radius=8
         )
-        self.pause_button.pack(fill="x", pady=5)
+        self.pause_button.grid(row=0, column=0, padx=(0, 5), pady=5, sticky="ew")
+
+        self.stop_button = ctk.CTkButton(
+            control_frame,
+            text="⏹ Stop",
+            command=self.stop_check,
+            height=40,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=("#c0392b", "#922b21"),
+            hover_color=("#e74c3c", "#c0392b"),
+            state="disabled",
+            corner_radius=8
+        )
+        self.stop_button.grid(row=0, column=1, padx=(5, 0), pady=5, sticky="ew")
         
         # ==================== RIGHT PANEL - RESULTS ====================
         right_panel = ctk.CTkFrame(self, corner_radius=10)
@@ -633,6 +654,7 @@ class DeadLinkCheckerGUI(ctk.CTk):
         depth = int(float(self.depth_slider.get()))
         workers = int(float(self.workers_slider.get()))
         timeout = int(float(self.timeout_slider.get()))
+        check_ext = self.check_external.get()
         
         # Update UI state
         self.is_checking = True
@@ -643,7 +665,7 @@ class DeadLinkCheckerGUI(ctk.CTk):
         
         self.start_button.configure(state="disabled")
         self.stop_button.configure(state="normal")
-        self.pause_button.configure(state="normal", text="⏸ Pause Analysis")
+        self.pause_button.configure(state="normal", text="⏸ Pause")
         self.url_entry.configure(state="disabled")
         
         # Clear previous results
@@ -660,7 +682,7 @@ class DeadLinkCheckerGUI(ctk.CTk):
         # Start checking in a separate thread
         thread = threading.Thread(
             target=self.check_links_thread,
-            args=(url, depth, workers, timeout),
+            args=(url, depth, workers, timeout, check_ext),
             daemon=True
         )
         thread.start()
@@ -694,7 +716,7 @@ class DeadLinkCheckerGUI(ctk.CTk):
                 
         return headers, auth
 
-    def check_links_thread(self, url, depth, workers, timeout):
+    def check_links_thread(self, url, depth, workers, timeout, check_external=True):
         """Thread function to check links"""
         headers, auth = self.get_headers_and_auth()
         try:
@@ -725,7 +747,8 @@ class DeadLinkCheckerGUI(ctk.CTk):
                 headers=headers,
                 exclude_patterns=exclude_patterns,
                 pause_event=self.pause_event,
-                stop_event=self.stop_event
+                stop_event=self.stop_event,
+                check_external=check_external
             )
             
             if self.stop_event.is_set():
@@ -796,26 +819,36 @@ class DeadLinkCheckerGUI(ctk.CTk):
         if not self.is_paused:
             self.is_paused = True
             self.pause_event.set()
-            self.pause_button.configure(text="▶ Resume Analysis", fg_color=("#27ae60", "#1e8449"))
+            self.pause_button.configure(text="▶ Resume", fg_color=("#27ae60", "#1e8449"), hover_color=("#2ecc71", "#27ae60"))
             self.log_message("\n⏸ Analysis paused.\n")
         else:
             self.is_paused = False
             self.pause_event.clear()
-            self.pause_button.configure(text="⏸ Pause Analysis", fg_color=("#f39c12", "#d35400"))
+            self.pause_button.configure(text="⏸ Pause", fg_color=("#f39c12", "#d35400"), hover_color=("#f1c40f", "#f39c12"))
             self.log_message("\n▶ Analysis resumed.\n")
 
     def setup_tray(self):
         """Setup system tray icon"""
-        try:
-            image = Image.open("assets/icon.png") if os.path.exists("assets/icon.png") else Image.new('RGB', (64, 64), color=(0, 120, 215))
-            menu = (
-                item('Restore', self.show_window),
-                item('Exit', self.exit_app)
-            )
-            self.tray_icon = pystray.Icon("deadlinkchecker", image, "Dead Link Checker", menu)
-            threading.Thread(target=self.tray_icon.run, daemon=True).start()
-        except:
-            pass
+        def init_tray():
+            try:
+                # Use a default icon if assets/icon.png is missing
+                icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "icon.png")
+                if os.path.exists(icon_path):
+                    image = Image.open(icon_path)
+                else:
+                    image = Image.new('RGB', (64, 64), color=(0, 120, 215))
+                
+                menu = (
+                    item('Restore', self.show_window),
+                    item('Exit', self.exit_app)
+                )
+                self.tray_icon = pystray.Icon("deadlinkchecker", image, "Dead Link Checker", menu)
+                self.tray_icon.run()
+            except Exception as e:
+                print(f"Tray error: {e}")
+
+        # Run tray initialization in a separate thread to avoid blocking startup
+        threading.Thread(target=init_tray, daemon=True).start()
 
     def show_window(self):
         """Show the main window from tray"""
@@ -830,16 +863,20 @@ class DeadLinkCheckerGUI(ctk.CTk):
         self.quit()
 
     def show_notification(self, title, message):
-        """Show system notification"""
-        try:
-            notification.notify(
-                title=title,
-                message=message,
-                app_name="Dead Link Checker",
-                timeout=10
-            )
-        except:
-            pass
+        """Show system notification in a non-blocking way"""
+        def _notify():
+            try:
+                notification.notify(
+                    title=title,
+                    message=message,
+                    app_name="Dead Link Checker",
+                    timeout=5
+                )
+            except:
+                pass
+        
+        # Always run notifications in a separate thread to avoid blocking GUI
+        threading.Thread(target=_notify, daemon=True).start()
 
     def update_grid(self, result: LinkResult):
         """Update the interactive grid with a new result"""
@@ -872,7 +909,7 @@ class DeadLinkCheckerGUI(ctk.CTk):
         """Reset UI to initial state"""
         self.start_button.configure(state="normal")
         self.stop_button.configure(state="disabled")
-        self.pause_button.configure(state="disabled", text="⏸ Pause Analysis")
+        self.pause_button.configure(state="disabled", text="⏸ Pause")
         self.url_entry.configure(state="normal")
         self.progress_bar.set(1)
 
@@ -906,14 +943,22 @@ class DeadLinkCheckerGUI(ctk.CTk):
         }))
     
     def monitor_progress(self):
-        """Monitor progress queue and update UI"""
+        """Monitor progress queue and update UI in a controlled manner"""
+        processed_count = 0
+        max_per_tick = 20 # Limit processing to keep UI responsive
+        
         try:
-            while True:
-                msg_type, data = self.progress_queue.get_nowait()
+            while processed_count < max_per_tick:
+                try:
+                    msg_type, data = self.progress_queue.get_nowait()
+                except queue.Empty:
+                    break
+                
+                processed_count += 1
                 
                 if msg_type == 'log':
                     self.status_text.configure(state="normal")
-                    self.status_text.insert("end", data)
+                    self.status_text.insert("end", str(data))
                     self.status_text.see("end")
                     self.status_text.configure(state="disabled")
                 
@@ -930,11 +975,11 @@ class DeadLinkCheckerGUI(ctk.CTk):
                     self.results.append(data)
                     self.add_result_to_grid(data)
                     
-        except queue.Empty:
-            pass
+        except Exception as e:
+            print(f"Error in monitor_progress: {e}")
         
         # Schedule next check
-        self.after(100, self.monitor_progress)
+        self.after(50, self.monitor_progress)
 
     def add_result_to_grid(self, result: LinkResult):
         """Add a single result row to the table grid"""
@@ -1037,6 +1082,11 @@ class SettingsWindow(ctk.CTkToplevel):
         self.depth_slider = ctk.CTkSlider(container, from_=1, to=5, number_of_steps=4)
         self.depth_slider.pack(fill="x", padx=10, pady=5)
         self.depth_slider.set(self.parent.config.get("depth", 1))
+
+        # Check External Default
+        self.check_ext_default = ctk.CTkCheckBox(container, text="Check External Links by Default")
+        self.check_ext_default.pack(fill="x", padx=10, pady=5)
+        if self.parent.config.get("check_external", True): self.check_ext_default.select()
         
         # Default Formats
         ctk.CTkLabel(container, text="Default Report Formats:", font=ctk.CTkFont(weight="bold")).pack(pady=(10, 0), padx=10, anchor="w")
@@ -1147,7 +1197,8 @@ class SettingsWindow(ctk.CTkToplevel):
             "auth_type": self.auth_type_var.get(),
             "username": self.user_entry.get(),
             "password": self.pass_entry.get(),
-            "cookies": self.cookies_entry.get()
+            "cookies": self.cookies_entry.get(),
+            "check_external": self.check_ext_default.get()
         }
         
         self.parent.config = new_config
@@ -1158,6 +1209,9 @@ class SettingsWindow(ctk.CTkToplevel):
         self.parent.update_workers_label(new_config["workers"])
         self.parent.depth_slider.set(new_config["depth"])
         self.parent.update_depth_label(new_config["depth"])
+        
+        if new_config["check_external"]: self.parent.check_external.select()
+        else: self.parent.check_external.deselect()
         
         if new_config["generate_txt"]: self.parent.generate_txt.select()
         else: self.parent.generate_txt.deselect()
@@ -1216,19 +1270,52 @@ class HistoryWindow(ctk.CTkToplevel):
         self.geometry(f'+{x}+{y}')
 
     def load_history(self):
+        """Load history sessions asynchronously to avoid blocking UI"""
         # Clear current list
         for widget in self.scroll_frame.winfo_children():
             widget.destroy()
             
         search_query = self.search_entry.get().strip()
-        sessions = self.parent.db.get_sessions(search_query)
+        
+        # Loading indicator
+        ctk.CTkLabel(self.scroll_frame, text="Loading history...", name="loading_label").pack(pady=20)
+        
+        def fetch_task():
+            try:
+                sessions = self.parent.db.get_sessions(search_query)
+                self.after(0, lambda: self.render_sessions(sessions))
+            except Exception as e:
+                self.after(0, lambda: messagebox.showerror("Database Error", str(e)))
+
+        threading.Thread(target=fetch_task, daemon=True).start()
+
+    def render_sessions(self, sessions):
+        """Render session cards progressively"""
+        # Remove loading label
+        for widget in self.scroll_frame.winfo_children():
+            if getattr(widget, "_name", "") == "loading_label":
+                widget.destroy()
 
         if not sessions:
             ctk.CTkLabel(self.scroll_frame, text="No matches found in history.", font=ctk.CTkFont(slant="italic")).pack(pady=20)
             return
 
-        for session in sessions:
-            self.add_session_card(session)
+        # Process in chunks to keep UI responsive
+        def render_chunk(remaining_sessions):
+            if not remaining_sessions or not self.winfo_exists():
+                return
+            
+            chunk_size = 5
+            chunk = remaining_sessions[:chunk_size]
+            rest = remaining_sessions[chunk_size:]
+            
+            for session in chunk:
+                self.add_session_card(session)
+            
+            if rest:
+                self.after(10, lambda: render_chunk(rest))
+
+        render_chunk(sessions)
 
     def add_session_card(self, session):
         reports_dir = self.parent.config.get("report_dir", "reports")
@@ -1295,6 +1382,7 @@ class HistoryWindow(ctk.CTkToplevel):
 
 def main():
     """Main entry point"""
+    setup_windows_encoding()
     app = DeadLinkCheckerGUI()
     app.mainloop()
 

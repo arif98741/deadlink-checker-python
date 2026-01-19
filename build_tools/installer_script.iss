@@ -2,12 +2,12 @@
 AppId={{9F7B3E2D-4C1A-4B6A-8D4F-9E0C2D1B8A5C}
 ; Basic Application Information
 AppName=Dead Link Checker
-AppVersion=2.1.1
+AppVersion=2.1.2
 AppPublisher=arif98741
 AppPublisherURL=https://devtobox.com
 AppSupportURL=https://github.com/arif98741/deadlink-checker-python/issues
 AppUpdatesURL=https://github.com/arif98741/deadlink-checker-python/releases
-AppCopyright=Copyright Ã‚Â© 2026 arif98741. All rights reserved.
+AppCopyright=Copyright © 2026 arif98741. All rights reserved.
 
 ; Installation Directories
 DefaultDirName={autopf}\DeadLinkChecker
@@ -22,7 +22,7 @@ InfoAfterFile=installation_complete.txt
 
 ; Output Configuration
 OutputDir=..\installer_output
-OutputBaseFilename=DeadLinkChecker_Setup_v2.1.1_x64
+OutputBaseFilename=DeadLinkChecker_Setup_v2.1.2_x64
 ; SetupIconFile=icon.ico
 
 ; Compression
@@ -43,7 +43,7 @@ PrivilegesRequiredOverridesAllowed=dialog
 
 ; Uninstall
 UninstallDisplayIcon={app}\DeadLinkChecker.exe
-UninstallDisplayName=Dead Link Checker v2.1.1
+UninstallDisplayName=Dead Link Checker v2.1.2
 
 ; Wizard Pages (Full Installation Experience)
 DisableWelcomePage=no
@@ -61,7 +61,7 @@ Name: "startmenu"; Description: "Create Start &Menu shortcuts"; GroupDescription
 
 [Files]
 ; Main executable (source has version, but install without version for cleaner shortcuts)
-Source: "dist\DeadLinkChecker_v2.1.1.exe"; DestDir: "{app}"; DestName: "DeadLinkChecker.exe"; Flags: ignoreversion
+Source: "dist\DeadLinkChecker_v2.1.2.exe"; DestDir: "{app}"; DestName: "DeadLinkChecker.exe"; Flags: ignoreversion
 
 ; Documentation
 Source: "..\docs\QUICKSTART.md"; DestDir: "{app}"; Flags: ignoreversion
@@ -95,7 +95,7 @@ Type: filesandordirs; Name: "{app}\reports"
 [Messages]
 ; Custom messages for professional feel
 WelcomeLabel1=Welcome to Dead Link Checker Setup
-WelcomeLabel2=This wizard will guide you through the installation of Dead Link Checker v2.1.1.%n%nDead Link Checker is a professional tool for analyzing and reporting broken links on websites. It helps you maintain website quality by identifying dead, broken, or problematic links.%n%nClick Next to continue.
+WelcomeLabel2=This wizard will guide you through the installation of Dead Link Checker v2.1.2.%n%nDead Link Checker is a professional tool for analyzing and reporting broken links on websites. It helps you maintain website quality by identifying dead, broken, or problematic links.%n%nClick Next to continue.
 ClickNext=Click Next to continue, or Cancel to exit Setup.
 SelectDirLabel3=Setup will install Dead Link Checker in the following folder.
 SelectDirBrowseLabel=To continue, click Next. If you would like to select a different folder, click Browse.
@@ -122,6 +122,8 @@ begin
     Log('Installation completed successfully');
   end;
 end;
+
+
 
 
 

@@ -1,6 +1,6 @@
 # 🔗 Dead Link Checker
 
-**Version 2.0** | Professional Website Link Analysis & Reporting Tool
+**Version 2.1.2** | Professional Website Link Analysis & Reporting Tool
 
 A powerful desktop application for analyzing and reporting broken links on websites. Built with Python and CustomTkinter, packaged as a standalone Windows executable.
 
@@ -686,17 +686,15 @@ See [LICENSE.txt](docs/LICENSE.txt) for full license text.
 
 ## 📈 Version History
 
-### Version 2.0 (Current)
-- ✅ Complete GUI redesign with modern interface
-- ✅ Added CSV export functionality
-- ✅ Real-time progress updates
-- ✅ Professional Windows installer
-- ✅ Versioned executable filenames
-- ✅ Website link in header (devtobox.com)
-- ✅ Improved error handling
-- ✅ Comprehensive documentation
+### Version 2.1.2 (Current)
+- ✅ Enhanced Windows responsiveness (Fixed "Not Responding" issues)
+- ✅ Improved history loading with progressive rendering
+- ✅ Redesigned action buttons (Start, Stop, Pause) for a premium look
+- ✅ Added "Check External Links" toggle in sidebar
+- ✅ Asynchronous system notifications and tray initialization
+- ✅ Modular project structure for better maintainability
 
-### Version 1.0
+### Version 2.1.1
 - ✅ Basic link checking functionality
 - ✅ TXT and PDF report generation
 - ✅ Command-line interface
@@ -731,4 +729,4 @@ If you find this project useful, please consider giving it a star on GitHub!
 
 **© 2026 All Rights Reserved**
 
-**Version 2.0**
+**Version 2.1.2**

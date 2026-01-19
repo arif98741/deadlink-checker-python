@@ -11,9 +11,17 @@ class DatabaseManager:
             db_path = os.path.join(base_dir, "deadlink_history.db")
         
         self.db_path = db_path
+        self._shared_conn = None
+        
+        # In-memory databases require a persistent connection to keep data
+        if self.db_path == ":memory:":
+            self._shared_conn = sqlite3.connect(self.db_path)
+            
         self._init_db()
 
     def _get_connection(self):
+        if self._shared_conn:
+            return self._shared_conn
         return sqlite3.connect(self.db_path)
 
     def _init_db(self):

@@ -49,15 +49,16 @@ def get_status_text(status_code: int) -> str:
 
 def normalize_url(url: str) -> str:
     """Normalize URL by removing fragments and trailing slashes."""
+    from urllib.parse import urlparse
     parsed = urlparse(url)
-    # Remove fragments
-    url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+    path = parsed.path
+    if path.endswith('/') and len(path) > 1:
+        path = path[:-1]
+    
+    normalized = f"{parsed.scheme}://{parsed.netloc}{path}"
     if parsed.query:
-        url += f"?{parsed.query}"
-    # Remove trailing slash for consistency (except for root domain)
-    if url.endswith('/') and len(parsed.path) > 1:
-        url = url[:-1]
-    return url
+        normalized += f"?{parsed.query}"
+    return normalized
 
 def open_file(path: str):
     """Open a file or directory using the default system application."""

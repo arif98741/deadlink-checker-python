@@ -43,7 +43,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: DeadLinkChecker_Linux
-          path: installer_output/DeadLinkChecker_v2.1.2_linux_x64.tar.gz
+          path: |
+            installer_output/*.tar.gz
+            installer_output/*.deb
 
   # Optional: You can also add a Windows build job here if you want it automated
   build-windows:

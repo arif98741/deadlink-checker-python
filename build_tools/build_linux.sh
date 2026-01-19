@@ -36,7 +36,7 @@ pyinstaller --noconfirm \
     "src/deadlink_gui.py"
 
 # 5. Create Installer Bundle (.tar.gz)
-echo "Packaging for Linux..."
+echo "Packaging for Linux (.tar.gz)..."
 PACKAGE_NAME="DeadLinkChecker_v2.1.2_linux_x64.tar.gz"
 TEMP_PKG="$DIST_DIR/pkg"
 mkdir -p "$TEMP_PKG"
@@ -47,7 +47,53 @@ chmod +x "$TEMP_PKG/install.sh"
 cd "$DIST_DIR"
 tar -czf "$INSTALLER_DIR/$PACKAGE_NAME" -C "$TEMP_PKG" .
 
+# 6. Create Debian Package (.deb)
+if command -v dpkg-deb &> /dev/null; then
+    echo "Packaging for Linux (.deb)..."
+    DEB_ROOT="$DIST_DIR/deb"
+    DEB_NAME="deadlinkchecker_2.1.2_amd64"
+    
+    mkdir -p "$DEB_ROOT/usr/bin"
+    mkdir -p "$DEB_ROOT/usr/share/applications"
+    mkdir -p "$DEB_ROOT/DEBIAN"
+    
+    # Copy binary
+    cp "$DIST_DIR/DeadLinkChecker" "$DEB_ROOT/usr/bin/deadlinkchecker"
+    chmod +x "$DEB_ROOT/usr/bin/deadlinkchecker"
+    
+    # Create Desktop Entry
+    cat <<EOF > "$DEB_ROOT/usr/share/applications/deadlinkchecker.desktop"
+[Desktop Entry]
+Version=2.1.2
+Type=Application
+Name=Dead Link Checker
+Comment=Professional Website Link Analysis Tool
+Exec=/usr/bin/deadlinkchecker
+Icon=html
+Terminal=false
+Categories=Development;Network;
+EOF
+
+    # Create Control File
+    cat <<EOF > "$DEB_ROOT/DEBIAN/control"
+Package: deadlinkchecker
+Version: 2.1.2
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: arif98741 <https://devtobox.com>
+Description: Professional Website Link Analysis Tool
+ Dead Link Checker is a professional tool for analyzing and reporting 
+ broken links on websites. Distributed as a standalone binary.
+EOF
+
+    dpkg-deb --build "$DEB_ROOT" "$INSTALLER_DIR/${DEB_NAME}.deb"
+fi
+
 echo "========================================"
 echo "BUILD COMPLETE!"
-echo "Linux Package: $INSTALLER_DIR/$PACKAGE_NAME"
+echo "Linux Tarball: $INSTALLER_DIR/$PACKAGE_NAME"
+if [ -f "$INSTALLER_DIR/${DEB_NAME}.deb" ]; then
+    echo "Linux Debian:  $INSTALLER_DIR/${DEB_NAME}.deb"
+fi
 echo "========================================"

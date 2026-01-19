@@ -132,15 +132,20 @@ If you want to create a standalone binary and install it to your system (menu sh
    chmod +x build_tools/build_linux.sh
    ./build_tools/build_linux.sh
    ```
-   This will create a `DeadLinkChecker_v2.1.2_linux_x64.tar.gz` in the `installer_output/` folder.
-2. **Install the bundle**:
-   ```bash
-   # Extract the bundle
-   cd installer_output
-   tar -xzf DeadLinkChecker_v2.1.2_linux_x64.tar.gz -C .
-   # Run the installer script
-   ./install.sh
-   ```
+   This will create a `DeadLinkChecker_v2.1.2_linux_x64.tar.gz` and a `deadlinkchecker_2.1.2_amd64.deb` in the `installer_output/` folder.
+2. **Install the app**:
+   - **Method A: Using .deb (Recommended for Ubuntu/Debian)**:
+     ```bash
+     sudo dpkg -i installer_output/deadlinkchecker_2.1.2_amd64.deb
+     ```
+   - **Method B: Using .tar.gz bundle**:
+     ```bash
+     # Extract the bundle
+     cd installer_output
+     tar -xzf DeadLinkChecker_v2.1.2_linux_x64.tar.gz -C .
+     # Run the installer script
+     ./install.sh
+     ```
    This will add the app to your application menu and create a terminal command `deadlinkchecker`.
 
 ### For Developers

@@ -22,6 +22,7 @@ from CTkTable import *
 # Import the core functionality from the modular deadlink package
 from deadlink import (
     setup_windows_encoding,
+    open_file,
     check_all_links, 
     generate_report, 
     save_report, 
@@ -1022,7 +1023,7 @@ class DeadLinkCheckerGUI(ctk.CTk):
             
         if os.path.exists(reports_dir):
             try:
-                os.startfile(reports_dir)
+                open_file(reports_dir)
             except Exception as e:
                 messagebox.showerror("Error", f"Could not open folder:\n{str(e)}")
         else:
@@ -1345,7 +1346,7 @@ class HistoryWindow(ctk.CTkToplevel):
         if os.path.exists(session_path):
             open_btn = ctk.CTkButton(header, text="📂 Open Folder", width=100, height=28, 
                                     fg_color="#34495e", hover_color="#2c3e50",
-                                    command=lambda p=session_path: os.startfile(p))
+                                    command=lambda p=session_path: open_file(p))
             open_btn.pack(side="right", padx=15, pady=6)
         
         # Stats info
@@ -1372,7 +1373,7 @@ class HistoryWindow(ctk.CTkToplevel):
                     
                     f_btn = ctk.CTkButton(f_frame, text="View Report", width=80, height=22, 
                                          font=ctk.CTkFont(size=11),
-                                         command=lambda p=file_path: os.startfile(p))
+                                         command=lambda p=file_path: open_file(p))
                     f_btn.pack(side="right")
             except:
                 pass

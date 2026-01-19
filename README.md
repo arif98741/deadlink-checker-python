@@ -107,6 +107,22 @@ A powerful desktop application for analyzing and reporting broken links on websi
 
 3. **Double-click** to run (no installation needed)
 
+### For Linux Users
+
+1. **Ensure Python 3.8+** and `tkinter` are installed:
+   ```bash
+   sudo apt-get install python3-tk  # Ubuntu/Debian
+   sudo apt-get install libappindicator3-1 # For System Tray
+   ```
+2. **Install requirements**:
+   ```bash
+   pip3 install -r build_tools/requirements.txt
+   ```
+3. **Run the script**:
+   ```bash
+   ./run.sh
+   ```
+
 ### For Developers
 
 See [Building from Source](#building-from-source) section below.
@@ -692,6 +708,7 @@ See [LICENSE.txt](docs/LICENSE.txt) for full license text.
 - ✅ Redesigned action buttons (Start, Stop, Pause) for a premium look
 - ✅ Added "Check External Links" toggle in sidebar
 - ✅ Asynchronous system notifications and tray initialization
+- ✅ Cross-platform support (Linux & macOS) with `run.sh`
 - ✅ Modular project structure for better maintainability
 
 ### Version 2.1.1

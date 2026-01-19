@@ -58,3 +58,16 @@ def normalize_url(url: str) -> str:
     if url.endswith('/') and len(parsed.path) > 1:
         url = url[:-1]
     return url
+
+def open_file(path: str):
+    """Open a file or directory using the default system application."""
+    import os
+    import subprocess
+    import sys
+
+    if sys.platform == 'win32':
+        os.startfile(path)
+    elif sys.platform == 'darwin':
+        subprocess.run(['open', path])
+    else:
+        subprocess.run(['xdg-open', path])

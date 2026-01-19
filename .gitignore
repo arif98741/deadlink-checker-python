@@ -32,6 +32,7 @@ reports/*
 # PyInstaller
 *.manifest
 *.spec
+!build_tools/*.spec
 *.spec.bak
 
 # IDEs

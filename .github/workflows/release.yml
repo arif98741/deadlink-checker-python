@@ -74,3 +74,36 @@ jobs:
         with:
           name: DeadLinkChecker_Windows
           path: build_tools/dist/DeadLinkChecker_v2.1.2.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r build_tools/requirements.txt
+          pip install pyinstaller
+
+      - name: Build macOS Application
+        working-directory: build_tools
+        run: |
+          pyinstaller --noconfirm deadlink_macos.spec
+
+      - name: Create DMG
+        working-directory: build_tools/dist
+        run: |
+          hdiutil create -volname "Dead Link Checker" -srcfolder DeadLinkChecker.app -ov -format UDZO DeadLinkChecker_v2.1.2_macOS.dmg
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeadLinkChecker_macOS
+          path: build_tools/dist/DeadLinkChecker_v2.1.2_macOS.dmg

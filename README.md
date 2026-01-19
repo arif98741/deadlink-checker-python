@@ -100,7 +100,7 @@ A powerful desktop application for analyzing and reporting broken links on websi
 
 1. **Download** the standalone executable:
    ```
-   DeadLinkChecker_v2.0.exe
+   DeadLinkChecker_v2.1.2.exe
    ```
 
 2. **Place** it in any folder
@@ -147,6 +147,12 @@ If you want to create a standalone binary and install it to your system (menu sh
      ./install.sh
      ```
    This will add the app to your application menu and create a terminal command `deadlinkchecker`.
+
+### For macOS Users
+
+1. **Download** the `.dmg` file from the [Releases](https://github.com/arif98741/deadlink-checker-python/releases) page.
+2. **Open** the `.dmg` and drag **DeadLinkChecker.app** to your **Applications** folder.
+3. **Right-click** and select **Open** (the first time) to bypass the security warning for unidentified developers.
 
 ### For Developers
 
@@ -734,6 +740,7 @@ See [LICENSE.txt](docs/LICENSE.txt) for full license text.
 - ✅ Added "Check External Links" toggle in sidebar
 - ✅ Asynchronous system notifications and tray initialization
 - ✅ Cross-platform support (Linux & macOS) with `run.sh`
+- ✅ Automated builds for Windows (.exe), Linux (.deb/.tar.gz), and macOS (.dmg)
 - ✅ Modular project structure for better maintainability
 
 ### Version 2.1.1
